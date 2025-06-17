@@ -19,7 +19,7 @@ hashed_passwords = stauth.Hasher(["password123"]).generate()
 credentials = {
     'usernames': {
         'user1': {
-            'name': 'User One',
+            'name': 'User_One',
             'password': hashed_passwords[0]
         }
     }
