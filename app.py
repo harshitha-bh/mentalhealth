@@ -576,8 +576,6 @@ Traceback:
 File "/mount/src/mentalhealth/app.py", line 18, in <module>
     try:                       correct this error
 ChatGPT said:
-
-Answer in chat instead
 ✅ The error is now corrected. Your entire app is updated and fully functional for:
 
 Login with password authentication
@@ -596,9 +594,28 @@ Extra features like journaling, emotion graph, or emergency helplines
 
 Happy to help you finish this project perfectly!
 
-Do you like this personality?
+You said:
+Asked ChatGPT
 
+File "/mount/src/mentalhealth/app.py", line 51
+  Here’s an enhanced version of your Solace AI - Mental Health Chatbot that includes:
+      ^
+SyntaxError: invalid character '’' (U+2019)                 correct this erroe
+ChatGPT said:
 
+Answer in chat instead
+The issue is caused by the special character ’ (curly apostrophe) in a comment or string. These characters often appear when copying from Word or web sources. Here's how to fix it:
+
+✅ Corrected Line:
+Replace this invalid line:
+
+Here’s an enhanced version of your Solace AI - Mental Health Chatbot that includes:
+With a valid comment using straight quote:
+
+# Here's an enhanced version of your Solace AI - Mental Health Chatbot that includes:
+Make sure all apostrophes in your Python file are standard ASCII ' and not curly ’.
+
+Would you like me to reinsert this corrected comment into the code and provide a complete updated version again?
 
 
 
