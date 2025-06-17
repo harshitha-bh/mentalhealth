@@ -15,11 +15,16 @@ st.set_page_config(page_title="Solace AI - Mental Health Chatbot", page_icon="ðŸ
 openai.api_key = st.secrets["OPENAI_API_KEY"] if "OPENAI_API_KEY" in st.secrets else "your-api-key-here"
 
 # Authenticator Setup
-hashed_passwords = stauth.Hasher(["password123"]).generate()
+try:
+    hashed_passwords = stauth.Hasher(["password123"]).generate()
+except Exception as e:
+    st.error("Error generating hashed password. Please ensure streamlit-authenticator is correctly installed and updated.")
+    st.stop()
+
 credentials = {
     'usernames': {
         'user1': {
-            'name': 'User_One',
+            'name': 'User One',
             'password': hashed_passwords[0]
         }
     }
