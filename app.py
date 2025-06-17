@@ -15,11 +15,12 @@ st.set_page_config(page_title="Solace AI - Mental Health Chatbot", page_icon="ðŸ
 openai.api_key = st.secrets["OPENAI_API_KEY"] if "OPENAI_API_KEY" in st.secrets else "your-api-key-here"
 
 # Authenticator Setup
+hashed_passwords = stauth.Hasher(["password123"]).generate()
 credentials = {
     'usernames': {
         'user1': {
             'name': 'User One',
-            'password': stauth.Hasher(['password123']).generate()[0]  # Hashed password
+            'password': hashed_passwords[0]
         }
     }
 }
