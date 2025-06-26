@@ -1,5 +1,5 @@
 streamlit
 openai
 pyttsx3
-speechrecognition
+SpeechRecognition
 streamlit-authenticator
