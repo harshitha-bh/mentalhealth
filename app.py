@@ -1,5 +1,3 @@
-# Solace AI - Mental Health Chatbot (Full Combined Version)
-
 import streamlit as st
 import openai
 import pyttsx3
@@ -8,18 +6,14 @@ import streamlit_authenticator as stauth
 import datetime
 from io import BytesIO
 
-# -------------- CONFIG SECTION ----------------
+# -------------- CONFIG ----------------
 st.set_page_config(page_title="Solace AI - Mental Health Chatbot", page_icon="🧠", layout="centered")
 
-# OpenAI Key
-openai.api_key = st.secrets["OPENAI_API_KEY"] if "OPENAI_API_KEY" in st.secrets else "your-api-key-here"
+# Load API Key
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# Authenticator Setup
-try:
-    hashed_passwords = stauth.Hasher(["password123"]).generate()
-except Exception as e:
-    st.error(f"Error generating hashed password: {e}")
-    st.stop()
+# -------------- AUTHENTICATION ----------------
+hashed_passwords = stauth.Hasher(["password123"]).generate()
 
 credentials = {
     'usernames': {
@@ -51,7 +45,7 @@ def greet_user():
     hour = datetime.datetime.now().hour
     if hour < 12:
         return "☀️ Good Morning!"
-    elif 12 <= hour < 18:
+    elif hour < 18:
         return "🌤️ Good Afternoon!"
     else:
         return "🌙 Good Evening!"
@@ -60,7 +54,7 @@ def get_mental_health_reply(user_input):
     messages = [
         {"role": "system", "content": "You are a kind and supportive mental health assistant."},
         {"role": "user", "content": f"""
-A user said: \"{user_input}\"
+A user said: "{user_input}"
 
 Please respond with:
 - A supportive and empathetic message.
@@ -83,18 +77,18 @@ def speak_text(text):
     engine.say(text)
     engine.runAndWait()
 
-# -------------- UI LAYOUT ----------------
+# -------------- UI ----------------
 st.title("🧘‍♀️ Solace AI - Mental Health Chatbot")
 st.markdown(f"**{greet_user()}** Welcome to Solace AI. Share your feelings and let me help you feel better. 💙")
 
-st.markdown("**Choose your current mood (optional):**")
-mood = st.selectbox("", ["😐 Neutral", "😞 Sad", "😡 Angry", "😰 Anxious", "😊 Happy", "😔 Lonely", "😵 Confused", "😭 Overwhelmed"], index=0)
+# Mood
+mood = st.selectbox("Choose your current mood (optional):", ["😐 Neutral", "😞 Sad", "😡 Angry", "😰 Anxious", "😊 Happy", "😔 Lonely", "😵 Confused", "😭 Overwhelmed"], index=0)
 
-# Voice Input
+# Voice input
 st.markdown("### 🎙️ Speak your feelings (optional)")
-audio_data = st.file_uploader("Upload a voice note (WAV format)", type=["wav"])
-user_input = ""
+audio_data = st.file_uploader("Upload a WAV voice note", type=["wav"])
 
+user_input = ""
 if audio_data is not None:
     recognizer = sr.Recognizer()
     audio_file = sr.AudioFile(audio_data)
@@ -106,20 +100,20 @@ if audio_data is not None:
     except sr.UnknownValueError:
         st.error("Sorry, could not understand the audio.")
 
-# Text Input
-user_input_text = st.text_area("💬 Or type your thoughts", height=150)
-if user_input_text.strip():
-    user_input = user_input_text
+# Text fallback
+text_input = st.text_area("💬 Or type your thoughts here:", height=150)
+if text_input.strip():
+    user_input = text_input
 
-# Initialize chat history
+# Chat history
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Support button
+# Support response
 if st.button("💡 Get Support"):
     if user_input.strip():
+        full_input = f"{mood} - {user_input}" if mood != "😐 Neutral" else user_input
         with st.spinner("Thinking warm thoughts..."):
-            full_input = f"{mood} - {user_input}" if mood != "😐 Neutral" else user_input
             reply = get_mental_health_reply(full_input)
             timestamp = datetime.datetime.now().strftime("%H:%M:%S")
             st.session_state.chat_history.append({
@@ -127,26 +121,26 @@ if st.button("💡 Get Support"):
                 "bot": reply,
                 "time": timestamp
             })
-            st.success("Here's something that may help:")
-            st.markdown(reply)
     else:
-        st.warning("Please enter your feelings first.")
-
-# Voice Output
-if st.button("🔊 Hear the response"):
-    if st.session_state.chat_history:
-        speak_text(st.session_state.chat_history[-1]['bot'])
+        st.warning("Please enter or speak your feelings first.")
 
 # Display chat history
 if st.session_state.chat_history:
     st.markdown("### 📝 Conversation History")
     for chat in reversed(st.session_state.chat_history):
         st.markdown(f"""
-        **🧍‍♀️ You [{chat['time']}]:** {chat['user']}  
-        **🤖 Solace AI:** {chat['bot']}
-        """)
+        <div style="background-color:#e0f2f1; padding:1rem; border-radius:10px; margin:0.5rem 0;">
+        <b>🧍‍♀️ You [{chat['time']}]:</b><br>{chat['user']}</div>
+        <div style="background-color:#f1f8e9; padding:1rem; border-radius:10px; margin-bottom:1rem;">
+        <b>🤖 Solace AI:</b><br>{chat['bot']}</div>
+        """, unsafe_allow_html=True)
 
-# Downloadable report
+# Voice output
+if st.button("🔊 Hear the response"):
+    if st.session_state.chat_history:
+        speak_text(st.session_state.chat_history[-1]["bot"])
+
+# Download report
 if st.button("📄 Download My Session Report"):
     if st.session_state.chat_history:
         output_text = "🧘‍♀️ Solace AI - Session Report\n"
