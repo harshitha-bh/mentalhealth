@@ -6,14 +6,18 @@ import streamlit_authenticator as stauth
 import datetime
 from io import BytesIO
 
-# -------------- CONFIG ----------------
+# ------------------ CONFIG ------------------
 st.set_page_config(page_title="Solace AI - Mental Health Chatbot", page_icon="🧠", layout="centered")
 
-# Load API Key
+# Load OpenAI API key from Streamlit secrets
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# -------------- AUTHENTICATION ----------------
-hashed_passwords = stauth.Hasher(["password123"]).generate()
+# ------------------ AUTHENTICATION ------------------
+
+# Hashed password for 'password123'
+hashed_passwords = [
+    " $2b$12$6Kq2kcP.SFg9VthZDKsD6utjrSaxxb1jndAGvknlTRE0u/sEvEU6y"
+]
 
 credentials = {
     'usernames': {
@@ -27,20 +31,23 @@ credentials = {
 authenticator = stauth.Authenticate(
     credentials,
     'solace_cookie',
-    'random_key',
-    1
+    'some_random_key',
+    cookie_expiry_days=1
 )
 
 name, auth_status, username = authenticator.login('Login', 'main')
 
-if auth_status is False:
+if auth_status == False:
     st.error("Incorrect username or password")
     st.stop()
 elif auth_status is None:
     st.warning("Please enter your username and password")
     st.stop()
+else:
+    st.success(f"Welcome {name}! 🎉")
 
-# -------------- FUNCTIONS ----------------
+# ------------------ FUNCTIONS ------------------
+
 def greet_user():
     hour = datetime.datetime.now().hour
     if hour < 12:
@@ -77,11 +84,12 @@ def speak_text(text):
     engine.say(text)
     engine.runAndWait()
 
-# -------------- UI ----------------
+# ------------------ UI ------------------
+
 st.title("🧘‍♀️ Solace AI - Mental Health Chatbot")
 st.markdown(f"**{greet_user()}** Welcome to Solace AI. Share your feelings and let me help you feel better. 💙")
 
-# Mood
+# Mood selection
 mood = st.selectbox("Choose your current mood (optional):", ["😐 Neutral", "😞 Sad", "😡 Angry", "😰 Anxious", "😊 Happy", "😔 Lonely", "😵 Confused", "😭 Overwhelmed"], index=0)
 
 # Voice input
@@ -100,7 +108,7 @@ if audio_data is not None:
     except sr.UnknownValueError:
         st.error("Sorry, could not understand the audio.")
 
-# Text fallback
+# Text input fallback
 text_input = st.text_area("💬 Or type your thoughts here:", height=150)
 if text_input.strip():
     user_input = text_input
