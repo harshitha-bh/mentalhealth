@@ -1,94 +1,65 @@
 import streamlit as st
 import openai
-import pyttsx3
-import speech_recognition as sr
 import streamlit_authenticator as stauth
-import datetime
-from io import BytesIO
 
-# ------------------ CONFIG ------------------
-st.set_page_config(page_title="Solace AI - Mental Health Chatbot", page_icon="🧠", layout="centered")
-
-# Load OpenAI API key
+# Load API Key
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# ------------------ LOGIN SYSTEM ------------------
+# User credentials
+names = ['Harshitha']
+usernames = ['harshitha']
+hashed_passwords = st.secrets["credentials"]["passwords"]
 
-# Pre-generated hashed password for: password123
-hashed_passwords = [
-    "$2b$12$kK4NOalRQMbzYMNzU3r5MueB9hk4S0ey44aCUvKJd0oxog4oHOqKS"
-]
-
-credentials = {
-    'usernames': {
-        'user1': {
-            'name': 'User One',
-            'password': hashed_passwords[0]
-        }
-    }
-}
-
+# Authenticator
 authenticator = stauth.Authenticate(
-    credentials,
-    'solace_cookie',
-    'some_random_key',
-    cookie_expiry_days=1
+    names, usernames, hashed_passwords,
+    "mentalhealth_chat", "abcdef", cookie_expiry_days=1
 )
 
-name, authentication_status, username = authenticator.login("Login", "main")
+# Login
+name, authentication_status, username = authenticator.login("Login", location="main")
 
-if auth_status == False:
-    st.error("Incorrect username or password")
-    st.stop()
-elif auth_status is None:
-    st.warning("Please enter your username and password")
-    st.stop()
-else:
-    st.success(f"Welcome, {name} 👋")
+st.set_page_config(page_title="Mental Health Chatbot", layout="centered")
 
-# ------------------ GREETING FUNCTION ------------------
-
-def greet_user():
-    hour = datetime.datetime.now().hour
-    if hour < 12:
-        return "☀️ Good Morning!"
-    elif hour < 18:
-        return "🌤️ Good Afternoon!"
-    else:
-        return "🌙 Good Evening!"
-
-# ------------------ OPENAI REPLY FUNCTION ------------------
-
+# Chatbot response
 def get_mental_health_reply(user_input):
-    messages = [
-        {"role": "system", "content": "You are a kind and supportive mental health assistant."},
-        {"role": "user", "content": f"""
-A user said: "{user_input}"
-
-Please respond with:
-- A supportive and empathetic message.
-- A motivational quote or affirmation.
-- A simple mental exercise to help them feel better.
-- Remind them gently to take rest or eat if needed.
-"""}
-    ]
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
-        messages=messages,
+        messages=[
+            {"role": "system", "content": "You are a supportive mental health assistant."},
+            {"role": "user", "content": f"""
+                A user said: '{user_input}'.
+                Please reply with:
+                1. A kind and empathetic message.
+                2. A motivational quote.
+                3. A simple calming exercise.
+                4. A reminder to rest or eat if needed.
+            """}
+        ],
         temperature=0.7,
         max_tokens=500
     )
     return response.choices[0].message.content
 
-# ------------------ VOICE OUTPUT ------------------
+# Interface
+if authentication_status:
+    st.markdown("<h1 style='color:#5cdb95;'>🌿 Mental Health Support</h1>", unsafe_allow_html=True)
+    st.markdown("Welcome, **{}**! Share your thoughts below:".format(name))
 
-def speak_text(text):
-    engine = pyttsx3.init()
-    engine.setProperty('rate', 150)
-    engine.say(text)
-    engine.runAndWait()
+    user_input = st.text_area("How are you feeling today?", height=150)
 
-# ------------------ MAIN UI ------------------
+    if st.button("💬 Get Support"):
+        if user_input.strip() == "":
+            st.warning("Please enter your thoughts.")
+        else:
+            with st.spinner("Thinking..."):
+                reply = get_mental_health_reply(user_input)
+                st.success("Here's something for you:")
+                st.write(reply)
 
-st.title("🧘‍♀️ Solace AI - Mental Health Chatbot")
-st.markdow
+    authenticator.logout("Logout", "sidebar")
+
+elif authentication_status is False:
+    st.error("Username or password is incorrect.")
+elif authentication_status is None:
+    st.warning("Please enter your credentials.")
