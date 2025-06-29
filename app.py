@@ -113,15 +113,18 @@ def chat_page():
         st.markdown(f"<div class='message {css}'>{msg}</div>", unsafe_allow_html=True)
 
     # Input + Submit
-    user_input = st.text_input("You:", key="chat_input", label_visibility="collapsed")
-    if st.button("Send"):
-        if user_input.strip():
-            st.session_state.chat.append(("user", user_input))
-            with st.spinner("Solace is typing..."):
-                reply = get_chatbot_reply(user_input)
-            st.session_state.chat.append(("bot", reply))
-            st.session_state.chat_input = ""  # clear input
-            st.experimental_rerun()
+   # Input + Submit
+user_input = st.text_input("You:", key="chat_input", label_visibility="collapsed")
+
+if st.button("Send"):
+    if user_input.strip():
+        st.session_state.chat.append(("user", user_input))
+        with st.spinner("Solace is typing..."):
+            reply = get_chatbot_reply(user_input)
+        st.session_state.chat.append(("bot", reply))
+        st.session_state["chat_input"] = ""  # ✅ Correct way to clear input
+        st.experimental_rerun()
+
 
     st.sidebar.title("👤 Account")
     st.sidebar.write(f"Logged in as: `{st.session_state.username}`")
