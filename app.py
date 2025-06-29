@@ -8,37 +8,66 @@ st.set_page_config(page_title="Solace AI", layout="centered")
 # ---------- Embedded CSS Styling ----------
 st.markdown("""
     <style>
+    body {
+        background-color: #fdfdfd;
+    }
+
     .title {
-        color: #4CAF50;
+        color: #6a1b9a;
         font-family: 'Segoe UI', sans-serif;
         text-align: center;
         margin-bottom: 0.2em;
     }
+
     .subtitle {
         text-align: center;
         font-style: italic;
-        color: #666;
+        color: #999;
         margin-top: 0;
+        margin-bottom: 20px;
     }
+
     .message {
-        padding: 12px 16px;
-        border-radius: 12px;
-        margin-bottom: 10px;
+        padding: 12px 18px;
+        border-radius: 15px;
+        margin: 8px 0;
         max-width: 90%;
-        font-size: 16px;
-        line-height: 1.5;
+        font-size: 15.5px;
+        line-height: 1.55;
+        box-shadow: 1px 2px 6px rgba(0,0,0,0.05);
     }
+
     .user {
-        background-color: #d1f1d1;
+        background: #ffe0f0;
         text-align: right;
-        color: #0a3d62;
+        color: #880e4f;
         margin-left: auto;
+        border-bottom-right-radius: 2px;
     }
+
     .bot {
-        background-color: #e1eaff;
+        background: #e3f2fd;
         text-align: left;
-        color: #4a148c;
+        color: #01579b;
         margin-right: auto;
+        border-bottom-left-radius: 2px;
+    }
+
+    /* Typing Indicator Style */
+    .typing {
+        font-style: italic;
+        color: #888;
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    /* Scrollbar Styling (Optional) */
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+        background-color: #ccc;
+        border-radius: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
