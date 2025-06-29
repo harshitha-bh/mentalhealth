@@ -3,15 +3,16 @@ import openai
 import os
 import json
 
-# 🔐 OpenAI key setup
+# --- OpenAI API Key ---
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# 📁 User storage
+# --- Users File ---
 USER_FILE = "users.json"
 if not os.path.exists(USER_FILE):
     with open(USER_FILE, "w") as f:
         json.dump({}, f)
 
+# --- Load and Save User Data ---
 def load_users():
     return json.load(open(USER_FILE))
 
@@ -19,7 +20,7 @@ def save_users(users):
     with open(USER_FILE, "w") as f:
         json.dump(users, f)
 
-# 🧠 AI reply function
+# --- Chatbot Response Logic ---
 def get_chatbot_reply(user_input):
     messages = [
         {"role": "system", "content": (
@@ -36,20 +37,19 @@ def get_chatbot_reply(user_input):
     )
     return response.choices[0].message.content.strip()
 
-# 🌱 Initialize session state
+# --- Session State Initialization ---
 for k, v in {
     "auth": False,
     "username": "",
     "page": "Login",
     "users": load_users(),
     "chat": [],
-    "show_chatbot": False,
-    "user_input_buffer": ""
+    "show_chatbot": False
 }.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# 🎨 Page setup and custom styles
+# --- Page Setup and Custom CSS ---
 st.set_page_config("Solace AI", layout="centered")
 st.markdown("""
 <style>
@@ -65,7 +65,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 🔐 Login Page
+# --- Login Page ---
 def login_page():
     st.title("🔐 Login to Solace AI")
     with st.form("login_form", clear_on_submit=True):
@@ -74,6 +74,7 @@ def login_page():
         login = st.form_submit_button("Login")
         if login:
             if uname in st.session_state.users and st.session_state.users[uname] == pwd:
+                st.success(f"✅ Logged in successfully! Welcome, {uname} 🎉")
                 st.session_state.auth = True
                 st.session_state.username = uname
                 st.session_state.page = "Dashboard"
@@ -81,7 +82,7 @@ def login_page():
             else:
                 st.error("Invalid credentials. Please sign up if you’re new.")
 
-# 📝 Signup Page
+# --- Signup Page ---
 def signup_page():
     st.title("📝 Sign Up for Solace AI")
     with st.form("signup_form", clear_on_submit=True):
@@ -96,11 +97,11 @@ def signup_page():
             else:
                 st.session_state.users[uname] = pwd
                 save_users(st.session_state.users)
-                st.success("Account created. Please log in.")
+                st.success("🎊 Signed up successfully! You can now log in.")
                 st.session_state.page = "Login"
                 st.rerun()
 
-# 🏠 Dashboard
+# --- Dashboard After Login ---
 def dashboard():
     st.title(f"👋 Welcome, {st.session_state.username}")
     st.markdown("You're now logged in to **Solace AI**, your friendly companion 💬")
@@ -108,7 +109,7 @@ def dashboard():
         st.session_state.show_chatbot = True
         st.rerun()
 
-# 🤖 Chat Page
+# --- Chat Page ---
 def chat_page():
     st.markdown("<h1 class='title'>🌿 Solace AI</h1>", unsafe_allow_html=True)
     st.markdown("<p class='subtitle'>Talk to me anytime 💗</p>", unsafe_allow_html=True)
@@ -117,16 +118,15 @@ def chat_page():
         css = "user" if role == "user" else "bot"
         st.markdown(f"<div class='message {css}'>{msg}</div>", unsafe_allow_html=True)
 
-    # 🧾 Input box that resets after send
-    form = st.form("chat_form")
-    user_input = form.text_input("Type your message", value="", label_visibility="collapsed")
-    send = form.form_submit_button("Send")
-    if send and user_input.strip():
-        st.session_state.chat.append(("user", user_input))
-        with st.spinner("Solace is thinking..."):
-            reply = get_chatbot_reply(user_input)
-        st.session_state.chat.append(("bot", reply))
-        st.rerun()
+    with st.form("chat_form", clear_on_submit=True):
+        user_input = st.text_input("Type your message", label_visibility="collapsed")
+        send = st.form_submit_button("Send")
+        if send and user_input.strip():
+            st.session_state.chat.append(("user", user_input))
+            with st.spinner("Solace is typing..."):
+                reply = get_chatbot_reply(user_input)
+            st.session_state.chat.append(("bot", reply))
+            st.rerun()
 
     st.sidebar.title("🔑 Account")
     st.sidebar.write(f"Logged in as: `{st.session_state.username}`")
@@ -136,7 +136,7 @@ def chat_page():
         st.session_state.chat = []
         st.rerun()
 
-# 🔁 Page Routing
+# --- Page Routing ---
 if not st.session_state.auth:
     st.sidebar.title("🔐 Access")
     st.session_state.page = st.sidebar.radio("Go to", ["Login", "Sign Up"])
