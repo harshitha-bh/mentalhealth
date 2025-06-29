@@ -21,21 +21,28 @@ st.markdown("""
         margin-top: 0;
     }
     .message {
-        background-color: #f1f1f1;
         padding: 12px 16px;
         border-radius: 12px;
         margin-bottom: 10px;
-    }
-    .bot {
-        background-color: #e1eaff;
-        text-align: left;
+        max-width: 90%;
+        font-size: 16px;
+        line-height: 1.5;
     }
     .user {
         background-color: #d1f1d1;
         text-align: right;
+        color: #0a3d62;
+        margin-left: auto;
+    }
+    .bot {
+        background-color: #e1eaff;
+        text-align: left;
+        color: #4a148c;
+        margin-right: auto;
     }
     </style>
 """, unsafe_allow_html=True)
+
 
 # ---------- Session State ----------
 if "auth" not in st.session_state:
