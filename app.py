@@ -1,22 +1,48 @@
 import streamlit as st
 import openai
-import time
 import os
+import time
 
+# ---------- Streamlit Setup ----------
 st.set_page_config(page_title="Solace AI", layout="centered")
 
-# Load CSS
-if os.path.exists("assets/style.css"):
-    with open("assets/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+# ---------- Embedded CSS Styling ----------
+st.markdown("""
+    <style>
+    .title {
+        color: #4CAF50;
+        font-family: 'Helvetica Neue', sans-serif;
+        text-align: center;
+        margin-bottom: 0.2em;
+    }
+    .subtitle {
+        text-align: center;
+        font-style: italic;
+        color: #666;
+        margin-top: 0;
+    }
+    .user-bubble {
+        background-color: #d1e7dd;
+        padding: 10px 15px;
+        margin: 10px 0;
+        border-radius: 10px;
+        text-align: right;
+    }
+    .bot-bubble {
+        background-color: #e3e3f3;
+        padding: 10px 15px;
+        margin: 10px 0;
+        border-radius: 10px;
+        text-align: left;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Mock user database
-users = {
-    "harshitha": "test1234",
-    "sai": "love123",
-    "priya": "peace456"
-}
+# ---------- Mock User Database ----------
+if "users" not in st.session_state:
+    st.session_state.users = {"demo": "demo123"}
 
+# ---------- Session State ----------
 if "auth" not in st.session_state:
     st.session_state.auth = False
 if "mode" not in st.session_state:
@@ -24,7 +50,7 @@ if "mode" not in st.session_state:
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# Auth system
+# ---------- Authentication Logic ----------
 def login():
     st.title("🔐 Login to Solace AI")
     with st.form("login_form"):
@@ -32,7 +58,7 @@ def login():
         password = st.text_input("Password", type="password")
         login_btn = st.form_submit_button("Login")
         if login_btn:
-            if username in users and users[username] == password:
+            if username in st.session_state.users and st.session_state.users[username] == password:
                 st.session_state.auth = True
                 st.success(f"Welcome back, {username}!")
             else:
@@ -45,76 +71,77 @@ def signup():
         new_pass = st.text_input("Choose a password", type="password")
         signup_btn = st.form_submit_button("Create Account")
         if signup_btn:
-            if new_user in users:
+            if new_user in st.session_state.users:
                 st.error("Username already exists.")
             elif not new_user or not new_pass:
                 st.warning("All fields are required.")
             else:
-                users[new_user] = new_pass
+                st.session_state.users[new_user] = new_pass
                 st.success("Account created! Please log in.")
                 st.session_state.mode = "login"
 
+# ---------- Login/Signup Interface ----------
 if not st.session_state.auth:
     st.sidebar.title("Account")
-    st.sidebar.radio("Choose mode", ["Login", "Sign Up"], key="mode_switch")
-    st.session_state.mode = st.session_state.mode_switch.lower()
-    if st.session_state.mode == "login":
+    st.session_state.mode = st.sidebar.radio("Choose Mode", ["Login", "Sign Up"])
+    if st.session_state.mode == "Login":
         login()
     else:
         signup()
     st.stop()
 
-# API key
+# ---------- OpenAI Setup ----------
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# Welcome UI
-st.markdown("<h1 class='title'>🌿 Solace AI</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'>Your supportive mental health companion.</p>", unsafe_allow_html=True)
-if os.path.exists("assets/therapy.png"):
-    st.image("assets/therapy.png", use_container_width=True)
-
-# GPT reply
-def get_reply(user_input):
-    st.session_state.chat_history.append(("user", user_input))
+def get_mental_health_reply(user_input):
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
             {"role": "system", "content": (
-                "You're a mental health companion who replies warmly like a close friend. "
-                "Add kindness, one motivational quote, and one calming activity suggestion in each response."
+                "You are a kind and supportive mental health assistant. "
+                "Reply with empathy, a motivational quote, a calming exercise, and a reminder to rest or eat."
             )},
             {"role": "user", "content": user_input}
         ],
-        temperature=0.7
+        temperature=0.7,
+        max_tokens=500
     )
-    reply = response.choices[0].message.content.strip()
-    st.session_state.chat_history.append(("bot", reply))
-    return reply
+    return response.choices[0].message.content.strip()
 
-# Typing effect
-def render_typing(reply):
+# ---------- Typing Animation ----------
+def typing_effect(text):
     with st.empty():
         typed = ""
-        for char in reply:
+        for char in text:
             typed += char
-            time.sleep(0.015)
+            time.sleep(0.01)
             st.markdown(typed + "▌")
         st.markdown(typed)
 
-# Input UI
-st.markdown("### 💬 Share how you're feeling:")
+# ---------- Main Interface ----------
+st.markdown("<h1 class='title'>🌿 Solace AI</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Your supportive mental health companion.</p>", unsafe_allow_html=True)
+
+# ---------- Show Image (.jpeg supported) ----------
+image_path = "therapy.jpeg"  # or therapy.jpg
+if os.path.exists(image_path):
+    st.image(image_path, use_container_width=True)
+
+st.markdown("### 💬 How are you feeling today?")
 user_input = st.text_area("Your message", height=100)
 
 if st.button("🧠 Get Support"):
     if user_input.strip():
-        reply = get_reply(user_input)
+        reply = get_mental_health_reply(user_input)
         st.success("Here's what Solace AI says:")
-        render_typing(reply)
+        typing_effect(reply)
+        st.session_state.chat_history.append(("user", user_input))
+        st.session_state.chat_history.append(("bot", reply))
     else:
-        st.warning("Please enter your feelings.")
+        st.warning("Please enter how you're feeling.")
 
-# Chat history with avatars
-st.markdown("### 🗒️ Conversation")
+# ---------- Chat History ----------
+st.markdown("### 🗒️ Your Conversation")
 for role, msg in st.session_state.chat_history:
     if role == "user":
         st.markdown(f"<div class='user-bubble'>🧍‍♀️ {msg}</div>", unsafe_allow_html=True)
