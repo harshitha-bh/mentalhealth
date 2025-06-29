@@ -1,13 +1,12 @@
 import streamlit as st
 import openai
 import time
-import pyttsx3
 import os
 
 st.set_page_config(page_title="Solace AI", layout="centered")
 
 # Load CSS
-with open("style.css") as f:
+with open("assets/style.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # Mock user database
@@ -73,13 +72,6 @@ st.markdown("<p class='subtitle'>Your supportive mental health companion.</p>", 
 if os.path.exists("assets/therapy.png"):
     st.image("assets/therapy.png", use_container_width=True)
 
-# Text-to-Speech
-def speak(text):
-    engine = pyttsx3.init()
-    engine.setProperty('rate', 170)
-    engine.say(text)
-    engine.runAndWait()
-
 # GPT reply
 def get_reply(user_input):
     st.session_state.chat_history.append(("user", user_input))
@@ -117,7 +109,6 @@ if st.button("🧠 Get Support"):
         reply = get_reply(user_input)
         st.success("Here's what Solace AI says:")
         render_typing(reply)
-        st.button("🔈 Read Out Loud", on_click=lambda: speak(reply))
     else:
         st.warning("Please enter your feelings.")
 
