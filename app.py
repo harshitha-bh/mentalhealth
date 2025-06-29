@@ -2,39 +2,42 @@ import streamlit as st
 import openai
 import time
 
-# ---------- Page Setup ----------
+# Page Setup
 st.set_page_config(page_title="Solace AI", layout="centered")
 
-# ---------- Embedded CSS Styling ----------
+# Embedded CSS: Therapy Pastel Theme + Mobile-Friendly
 st.markdown("""
     <style>
     body {
         background-color: #fdfdfd;
+        font-family: 'Segoe UI', sans-serif;
     }
 
     .title {
         color: #6a1b9a;
-        font-family: 'Segoe UI', sans-serif;
         text-align: center;
-        margin-bottom: 0.2em;
+        font-weight: bold;
+        font-size: 2.2em;
+        margin-bottom: 0.1em;
     }
 
     .subtitle {
         text-align: center;
         font-style: italic;
-        color: #999;
-        margin-top: 0;
-        margin-bottom: 20px;
+        color: #888;
+        margin-bottom: 30px;
+        font-size: 1em;
     }
 
     .message {
-        padding: 12px 18px;
+        padding: 14px 18px;
         border-radius: 15px;
         margin: 8px 0;
         max-width: 90%;
-        font-size: 15.5px;
-        line-height: 1.55;
-        box-shadow: 1px 2px 6px rgba(0,0,0,0.05);
+        font-size: 15.8px;
+        line-height: 1.5;
+        box-shadow: 1px 2px 6px rgba(0,0,0,0.06);
+        word-wrap: break-word;
     }
 
     .user {
@@ -42,38 +45,41 @@ st.markdown("""
         text-align: right;
         color: #880e4f;
         margin-left: auto;
-        border-bottom-right-radius: 2px;
+        border-bottom-right-radius: 4px;
     }
 
     .bot {
         background: #e3f2fd;
         text-align: left;
-        color: #01579b;
+        color: #0d47a1;
         margin-right: auto;
-        border-bottom-left-radius: 2px;
+        border-bottom-left-radius: 4px;
     }
 
-    /* Typing Indicator Style */
     .typing {
         font-style: italic;
-        color: #888;
+        color: #999;
         padding: 8px;
         font-size: 14px;
     }
 
-    /* Scrollbar Styling (Optional) */
     ::-webkit-scrollbar {
         width: 6px;
     }
     ::-webkit-scrollbar-thumb {
-        background-color: #ccc;
+        background-color: #bbb;
         border-radius: 10px;
+    }
+
+    @media screen and (max-width: 600px) {
+        .message {
+            font-size: 15px;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
 
-
-# ---------- Session State ----------
+# Session State Defaults
 if "auth" not in st.session_state:
     st.session_state.auth = False
 if "mode" not in st.session_state:
@@ -83,7 +89,7 @@ if "users" not in st.session_state:
 if "chat" not in st.session_state:
     st.session_state.chat = []
 
-# ---------- Login/Signup Forms ----------
+# Login Form
 def login():
     st.title("🔐 Login to Solace AI")
     with st.form("login_form"):
@@ -97,6 +103,7 @@ def login():
             else:
                 st.error("User not found or incorrect password. Please Sign Up if you don't have an account.")
 
+# Signup Form
 def signup():
     st.title("📝 Sign Up for Solace AI")
     with st.form("signup_form"):
@@ -113,7 +120,7 @@ def signup():
                 st.success("Account created! Please log in.")
                 st.session_state.mode = "login"
 
-# ---------- Show Auth Forms ----------
+# Login or Signup
 if not st.session_state.auth:
     st.sidebar.title("Account")
     st.session_state.mode = st.sidebar.radio("Choose", ["Login", "Sign Up"])
@@ -123,18 +130,23 @@ if not st.session_state.auth:
         signup()
     st.stop()
 
-# ---------- OpenAI Key ----------
+# OpenAI API
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# ---------- Chatbot Logic ----------
+# Smart Chatbot Reply
 def get_smart_reply(user_input):
     messages = [
         {
             "role": "system",
             "content": (
-                "You're Solace AI, a friendly mental health chatbot who talks like a chill friend. "
-                "Be casual and warm. Use emojis. If the user expresses stress, anxiety, or sadness, then give a short motivational quote, calming exercise, and reminder to rest. "
-                "Otherwise, just chat casually like a close buddy."
+                "You are Solace AI, a warm, friendly mental health chatbot who talks like a best friend. "
+                "Your replies are casual, supportive, and human-like with emojis. "
+                "If the user expresses stress, sadness, or emotional overwhelm, reply with:\n"
+                "- A caring, empathetic tone\n"
+                "- One motivational quote\n"
+                "- A calming exercise (e.g., breathing)\n"
+                "- A gentle reminder to rest or eat\n"
+                "Else, just reply in a casual, friendly tone like a buddy chatting on WhatsApp."
             )
         },
         {"role": "user", "content": user_input}
@@ -142,12 +154,12 @@ def get_smart_reply(user_input):
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages,
-        temperature=0.7,
+        temperature=0.8,
         max_tokens=500
     )
     return response.choices[0].message.content.strip()
 
-# ---------- Typing Animation ----------
+# Typing Effect (Optional Visual Feel)
 def typing_effect(message):
     with st.empty():
         typed = ""
@@ -157,22 +169,24 @@ def typing_effect(message):
             st.markdown(typed + "▌")
         st.markdown(typed)
 
-# ---------- Chat UI ----------
+# UI Title
 st.markdown("<h1 class='title'>🌿 Solace AI</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'>Your supportive mental health companion.</p>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Your personal mental health companion 💬</p>", unsafe_allow_html=True)
 
+# Show Chat History
 chat_placeholder = st.container()
 with chat_placeholder:
     for role, msg in st.session_state.chat:
         css_class = "user" if role == "user" else "bot"
         st.markdown(f"<div class='message {css_class}'>{msg}</div>", unsafe_allow_html=True)
 
+# Input Form
 with st.form("chat_input_form", clear_on_submit=True):
     user_input = st.text_area("You:", height=80, key="chat_input")
     submitted = st.form_submit_button("Send")
     if submitted and user_input.strip():
         st.session_state.chat.append(("user", user_input))
-        with st.spinner("Solace is typing..."):
+        with st.spinner("💬 Solace is typing..."):
             reply = get_smart_reply(user_input)
             st.session_state.chat.append(("bot", reply))
-            st.rerun()  # Real-time chat experience
+            st.rerun()  # Real-time flow
