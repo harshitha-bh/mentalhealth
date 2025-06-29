@@ -97,13 +97,26 @@ def get_mental_health_reply(user_input):
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
-            {"role": "system", "content": (
-                "You are a kind and supportive mental health assistant. "
-                "Reply with empathy, a motivational quote, a calming exercise, and a reminder to rest or eat."
-            )},
-            {"role": "user", "content": user_input}
+            {
+                "role": "system",
+                "content": (
+                    "You're Solace AI, a 20-year-old friendly and chill chatbot who supports users like a close friend. "
+                    "Your tone is casual, supportive, and emotionally intelligent. "
+                    "When users are just chatting casually, you respond like a human friend — light, informal, with emojis. "
+                    "But if a user expresses sadness, stress, anxiety, or emotional distress, then and only then, you should:\n"
+                    "- Give a short supportive message\n"
+                    "- Include a non-cliché motivational quote\n"
+                    "- Suggest a simple calming activity (like a breathing tip)\n"
+                    "- Gently remind them to rest or eat if needed\n\n"
+                    "Never sound robotic or overly formal. Always keep it natural, comforting, and adaptive to user tone. Use emojis where it feels human."
+                )
+            },
+            {
+                "role": "user",
+                "content": user_input
+            }
         ],
-        temperature=0.7,
+        temperature=0.8,
         max_tokens=500
     )
     return response.choices[0].message.content.strip()
