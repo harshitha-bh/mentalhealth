@@ -112,7 +112,7 @@ def dashboard():
 # --- Chat Page ---
 def chat_page():
     st.markdown("<h1 class='title'>🌿 Solace AI</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='subtitle'>Talk to me anytime 💗</p>", unsafe_allow_html=True)
+    st.markdown("<p class='subtitle'>I am ur mental health supporter(and also a good friend) ... 💗</p>", unsafe_allow_html=True)
 
     for role, msg in st.session_state.chat:
         css = "user" if role == "user" else "bot"
