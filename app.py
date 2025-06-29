@@ -7,7 +7,7 @@ import os
 st.set_page_config(page_title="Solace AI", layout="centered")
 
 # Load CSS
-with open("assets/style.css") as f:
+with open("style.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # Mock user database
