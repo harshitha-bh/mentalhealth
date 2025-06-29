@@ -15,19 +15,21 @@ def save_users(users):
     with open(USER_FILE, "w") as f:
         json.dump(users, f)
 
-# Initial session state
+# Initialize session state
 if "users" not in st.session_state:
     st.session_state.users = load_users()
 if "auth" not in st.session_state:
     st.session_state.auth = False
-if "chat" not in st.session_state:
-    st.session_state.chat = []
 if "username" not in st.session_state:
     st.session_state.username = ""
+if "chat" not in st.session_state:
+    st.session_state.chat = []
 if "page" not in st.session_state:
     st.session_state.page = "Login"
-if "current_input" not in st.session_state:
-    st.session_state.current_input = ""
+if "show_chatbot" not in st.session_state:
+    st.session_state.show_chatbot = False
+if "user_input_buffer" not in st.session_state:
+    st.session_state.user_input_buffer = ""
 
 # UI Styling
 st.set_page_config(page_title="Solace AI", layout="centered")
@@ -79,10 +81,10 @@ def login_page():
             if username in users and users[username] == password:
                 st.session_state.auth = True
                 st.session_state.username = username
-                st.session_state.page = "Chat"
+                st.session_state.page = "Dashboard"
                 st.success(f"Welcome back, {username} 👋")
             else:
-                st.error("Invalid credentials. Please sign up if you're new.")
+                st.error("Invalid credentials. Please sign up.")
 
 # Signup Page
 def signup_page():
@@ -102,30 +104,35 @@ def signup_page():
                 st.success("Account created! Please login.")
                 st.session_state.page = "Login"
 
-# Chat Page
+# Dashboard Page
+def dashboard():
+    st.title(f"👋 Hello, {st.session_state.username}!")
+    st.write("Welcome to **Solace AI**, your personal mental health support companion 💬")
+    if st.button("🧠 Start Chatbot"):
+        st.session_state.show_chatbot = True
+
+# Chatbot Page
 def chat_page():
     st.markdown("<h1 class='title'>🌿 Solace AI</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='subtitle'>Your personal mental health buddy 💬</p>", unsafe_allow_html=True)
+    st.markdown("<p class='subtitle'>Your mental health buddy is here 💗</p>", unsafe_allow_html=True)
 
-    # Display chat messages
+    # Display chat history
     for role, msg in st.session_state.chat:
         css = "user" if role == "user" else "bot"
         st.markdown(f"<div class='message {css}'>{msg}</div>", unsafe_allow_html=True)
 
-    # Input + Submit
-   # Input + Submit
-user_input = st.text_input("You:", key="chat_input", label_visibility="collapsed")
+    # Input and Send
+    user_input = st.text_input("You:", key="user_input_buffer", label_visibility="collapsed")
+    if st.button("Send"):
+        if user_input.strip():
+            st.session_state.chat.append(("user", user_input))
+            with st.spinner("Solace is typing..."):
+                reply = get_chatbot_reply(user_input)
+            st.session_state.chat.append(("bot", reply))
+            st.session_state.user_input_buffer = ""  # Safe reset
+            st.experimental_rerun()
 
-if st.button("Send"):
-    if user_input.strip():
-        st.session_state.chat.append(("user", user_input))
-        with st.spinner("Solace is typing..."):
-            reply = get_chatbot_reply(user_input)
-        st.session_state.chat.append(("bot", reply))
-        st.session_state["chat_input"] = ""  # ✅ Correct way to clear input
-        st.experimental_rerun()
-
-
+    # Sidebar
     st.sidebar.title("👤 Account")
     st.sidebar.write(f"Logged in as: `{st.session_state.username}`")
     if st.sidebar.button("Logout"):
@@ -133,15 +140,18 @@ if st.button("Send"):
         st.session_state.username = ""
         st.session_state.chat = []
         st.session_state.page = "Login"
+        st.session_state.show_chatbot = False
         st.experimental_rerun()
 
-# Page Router
+# Page Controller
 if not st.session_state.auth:
-    st.sidebar.title("🔐 Account Access")
-    st.session_state.page = st.sidebar.radio("Choose:", ["Login", "Sign Up"])
+    st.sidebar.title("🔐 Access")
+    st.session_state.page = st.sidebar.radio("Choose page", ["Login", "Sign Up"])
     if st.session_state.page == "Login":
         login_page()
     else:
         signup_page()
-else:
+elif st.session_state.show_chatbot:
     chat_page()
+else:
+    dashboard()
