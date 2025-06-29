@@ -1,9 +1,8 @@
 import streamlit as st
 import openai
-import os
 import time
 
-# ---------- Streamlit Setup ----------
+# ---------- Page Setup ----------
 st.set_page_config(page_title="Solace AI", layout="centered")
 
 # ---------- Embedded CSS Styling ----------
@@ -11,7 +10,7 @@ st.markdown("""
     <style>
     .title {
         color: #4CAF50;
-        font-family: 'Helvetica Neue', sans-serif;
+        font-family: 'Segoe UI', sans-serif;
         text-align: center;
         margin-bottom: 0.2em;
     }
@@ -21,142 +20,123 @@ st.markdown("""
         color: #666;
         margin-top: 0;
     }
-    .user-bubble {
-        background-color: #d1e7dd;
-        padding: 10px 15px;
-        margin: 10px 0;
-        border-radius: 10px;
-        text-align: right;
+    .message {
+        background-color: #f1f1f1;
+        padding: 12px 16px;
+        border-radius: 12px;
+        margin-bottom: 10px;
     }
-    .bot-bubble {
-        background-color: #e3e3f3;
-        padding: 10px 15px;
-        margin: 10px 0;
-        border-radius: 10px;
+    .bot {
+        background-color: #e1eaff;
         text-align: left;
+    }
+    .user {
+        background-color: #d1f1d1;
+        text-align: right;
     }
     </style>
 """, unsafe_allow_html=True)
-
-# ---------- Mock User Database ----------
-if "users" not in st.session_state:
-    st.session_state.users = {"demo": "demo123"}
 
 # ---------- Session State ----------
 if "auth" not in st.session_state:
     st.session_state.auth = False
 if "mode" not in st.session_state:
     st.session_state.mode = "login"
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
+if "users" not in st.session_state:
+    st.session_state.users = {"demo": "demo123"}
+if "chat" not in st.session_state:
+    st.session_state.chat = []
 
-# ---------- Authentication Logic ----------
+# ---------- Login/Signup Forms ----------
 def login():
     st.title("🔐 Login to Solace AI")
     with st.form("login_form"):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
-        login_btn = st.form_submit_button("Login")
-        if login_btn:
+        submitted = st.form_submit_button("Login")
+        if submitted:
             if username in st.session_state.users and st.session_state.users[username] == password:
                 st.session_state.auth = True
                 st.success(f"Welcome back, {username}!")
             else:
-                st.error("Invalid username or password.")
+                st.error("User not found or incorrect password. Please Sign Up if you don't have an account.")
 
 def signup():
     st.title("📝 Sign Up for Solace AI")
     with st.form("signup_form"):
         new_user = st.text_input("Choose a username")
         new_pass = st.text_input("Choose a password", type="password")
-        signup_btn = st.form_submit_button("Create Account")
-        if signup_btn:
-            if new_user in st.session_state.users:
-                st.error("Username already exists.")
-            elif not new_user or not new_pass:
+        submitted = st.form_submit_button("Sign Up")
+        if submitted:
+            if not new_user or not new_pass:
                 st.warning("All fields are required.")
+            elif new_user in st.session_state.users:
+                st.error("Username already exists. Please choose another.")
             else:
                 st.session_state.users[new_user] = new_pass
                 st.success("Account created! Please log in.")
                 st.session_state.mode = "login"
 
-# ---------- Login/Signup Interface ----------
+# ---------- Show Auth Forms ----------
 if not st.session_state.auth:
     st.sidebar.title("Account")
-    st.session_state.mode = st.sidebar.radio("Choose Mode", ["Login", "Sign Up"])
+    st.session_state.mode = st.sidebar.radio("Choose", ["Login", "Sign Up"])
     if st.session_state.mode == "Login":
         login()
     else:
         signup()
     st.stop()
 
-# ---------- OpenAI Setup ----------
+# ---------- OpenAI Key ----------
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-def get_mental_health_reply(user_input):
+# ---------- Chatbot Logic ----------
+def get_smart_reply(user_input):
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You're Solace AI, a friendly mental health chatbot who talks like a chill friend. "
+                "Be casual and warm. Use emojis. If the user expresses stress, anxiety, or sadness, then give a short motivational quote, calming exercise, and reminder to rest. "
+                "Otherwise, just chat casually like a close buddy."
+            )
+        },
+        {"role": "user", "content": user_input}
+    ]
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You're Solace AI, a 20-year-old friendly and chill chatbot who supports users like a close friend. "
-                    "Your tone is casual, supportive, and emotionally intelligent. "
-                    "When users are just chatting casually, you respond like a human friend — light, informal, with emojis. "
-                    "But if a user expresses sadness, stress, anxiety, or emotional distress, then and only then, you should:\n"
-                    "- Give a short supportive message\n"
-                    "- Include a non-cliché motivational quote\n"
-                    "- Suggest a simple calming activity (like a breathing tip)\n"
-                    "- Gently remind them to rest or eat if needed\n\n"
-                    "Never sound robotic or overly formal. Always keep it natural, comforting, and adaptive to user tone. Use emojis where it feels human."
-                )
-            },
-            {
-                "role": "user",
-                "content": user_input
-            }
-        ],
-        temperature=0.8,
+        messages=messages,
+        temperature=0.7,
         max_tokens=500
     )
     return response.choices[0].message.content.strip()
 
 # ---------- Typing Animation ----------
-def typing_effect(text):
+def typing_effect(message):
     with st.empty():
         typed = ""
-        for char in text:
+        for char in message:
             typed += char
             time.sleep(0.01)
             st.markdown(typed + "▌")
         st.markdown(typed)
 
-# ---------- Main Interface ----------
+# ---------- Chat UI ----------
 st.markdown("<h1 class='title'>🌿 Solace AI</h1>", unsafe_allow_html=True)
 st.markdown("<p class='subtitle'>Your supportive mental health companion.</p>", unsafe_allow_html=True)
 
-# ---------- Show Image (.jpeg supported) ----------
-image_path = "therapy.jpeg"  # or therapy.jpg
-if os.path.exists(image_path):
-    st.image(image_path, use_container_width=True)
+chat_placeholder = st.container()
+with chat_placeholder:
+    for role, msg in st.session_state.chat:
+        css_class = "user" if role == "user" else "bot"
+        st.markdown(f"<div class='message {css_class}'>{msg}</div>", unsafe_allow_html=True)
 
-st.markdown("### 💬 How are you feeling today?")
-user_input = st.text_area("Your message", height=100)
-
-if st.button("🧠 Get Support"):
-    if user_input.strip():
-        reply = get_mental_health_reply(user_input)
-        st.success("Here's what Solace AI says:")
-        typing_effect(reply)
-        st.session_state.chat_history.append(("user", user_input))
-        st.session_state.chat_history.append(("bot", reply))
-    else:
-        st.warning("Please enter how you're feeling.")
-
-# ---------- Chat History ----------
-st.markdown("### 🗒️ Your Conversation")
-for role, msg in st.session_state.chat_history:
-    if role == "user":
-        st.markdown(f"<div class='user-bubble'>🧍‍♀️ {msg}</div>", unsafe_allow_html=True)
-    else:
-        st.markdown(f"<div class='bot-bubble'>🤖 {msg}</div>", unsafe_allow_html=True)
+with st.form("chat_input_form", clear_on_submit=True):
+    user_input = st.text_area("You:", height=80, key="chat_input")
+    submitted = st.form_submit_button("Send")
+    if submitted and user_input.strip():
+        st.session_state.chat.append(("user", user_input))
+        with st.spinner("Solace is typing..."):
+            reply = get_smart_reply(user_input)
+            st.session_state.chat.append(("bot", reply))
+            st.rerun()  # Real-time chat experience
