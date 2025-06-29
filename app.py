@@ -3,6 +3,7 @@ import openai
 import time
 import pyttsx3
 import speech_recognition as sr
+import os
 
 # === Page Settings ===
 st.set_page_config(page_title="Solace AI", layout="centered")
@@ -33,7 +34,12 @@ if "logged_in" not in st.session_state or not st.session_state["logged_in"]:
 # === Welcome UI ===
 st.markdown("<h1 style='color:#4CAF50;'>🌿 Welcome to Solace AI</h1>", unsafe_allow_html=True)
 st.markdown("Your personal mental health support companion.")
-st.image("assets/therapy.png", use_column_width=True)
+
+# ✅ FIXED: Show image if it exists
+if os.path.exists("assets/therapy.png"):
+    st.image("assets/therapy.png", use_container_width=True)
+else:
+    st.info("💡 Add a calming image in `assets/therapy.png` for better visuals.")
 
 # === Voice Input ===
 def voice_input():
@@ -64,7 +70,7 @@ def get_reply(user_input):
                 "content": (
                     "You are a kind and supportive mental health companion. "
                     "Talk like a best friend using warm, friendly tone. "
-                    "Include a motivational quote, a calming suggestion, and a reminder for self-care."
+                    "Include a motivational quote, calming suggestion, and reminder for self-care."
                 ),
             },
             {"role": "user", "content": user_input}
