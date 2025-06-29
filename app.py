@@ -86,10 +86,14 @@ def login():
             if username in users and users[username] == password:
                 st.session_state.auth = True
                 st.session_state.username = username
-                st.success(f"Welcome, {username}!")
-                st.experimental_rerun()
+                st.session_state.just_logged_in = True  # New flag
             else:
                 st.error("Invalid username or password. Please sign up if you're new.")
+
+# Safe rerun after successful login
+if st.session_state.get("just_logged_in", False):
+    st.session_state.just_logged_in = False
+    st.experimental_rerun()
 
 # Signup
 def signup():
