@@ -2,87 +2,103 @@ import streamlit as st
 import openai
 import time
 import pyttsx3
-import speech_recognition as sr
 import os
 
-# === Page Settings ===
 st.set_page_config(page_title="Solace AI", layout="centered")
 
-# === Session State Setup ===
+# Load CSS
+with open("assets/style.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# Mock user database
+users = {
+    "harshitha": "test1234",
+    "sai": "love123",
+    "priya": "peace456"
+}
+
+if "auth" not in st.session_state:
+    st.session_state.auth = False
+if "mode" not in st.session_state:
+    st.session_state.mode = "login"
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
-# === Load API Key from Secrets ===
-openai.api_key = st.secrets["OPENAI_API_KEY"]
-
-# === Custom Login System ===
+# Auth system
 def login():
-    st.markdown("## 🔐 Login to Solace AI")
+    st.title("🔐 Login to Solace AI")
     with st.form("login_form"):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Login")
-        if submitted:
-            if username == "harshitha" and password == "test1234":
-                st.session_state["logged_in"] = True
+        login_btn = st.form_submit_button("Login")
+        if login_btn:
+            if username in users and users[username] == password:
+                st.session_state.auth = True
+                st.success(f"Welcome back, {username}!")
             else:
-                st.error("❌ Invalid credentials.")
-login()
-if "logged_in" not in st.session_state or not st.session_state["logged_in"]:
+                st.error("Invalid username or password.")
+
+def signup():
+    st.title("📝 Sign Up for Solace AI")
+    with st.form("signup_form"):
+        new_user = st.text_input("Choose a username")
+        new_pass = st.text_input("Choose a password", type="password")
+        signup_btn = st.form_submit_button("Create Account")
+        if signup_btn:
+            if new_user in users:
+                st.error("Username already exists.")
+            elif not new_user or not new_pass:
+                st.warning("All fields are required.")
+            else:
+                users[new_user] = new_pass
+                st.success("Account created! Please log in.")
+                st.session_state.mode = "login"
+
+if not st.session_state.auth:
+    st.sidebar.title("Account")
+    st.sidebar.radio("Choose mode", ["Login", "Sign Up"], key="mode_switch")
+    st.session_state.mode = st.session_state.mode_switch.lower()
+    if st.session_state.mode == "login":
+        login()
+    else:
+        signup()
     st.stop()
 
-# === Welcome UI ===
-st.markdown("<h1 style='color:#4CAF50;'>🌿 Welcome to Solace AI</h1>", unsafe_allow_html=True)
-st.markdown("Your personal mental health support companion.")
+# API key
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-# ✅ FIXED: Show image if it exists
+# Welcome UI
+st.markdown("<h1 class='title'>🌿 Solace AI</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Your supportive mental health companion.</p>", unsafe_allow_html=True)
 if os.path.exists("assets/therapy.png"):
     st.image("assets/therapy.png", use_container_width=True)
-else:
-    st.info("💡 Add a calming image in `assets/therapy.png` for better visuals.")
 
-# === Voice Input ===
-def voice_input():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.info("🎙️ Listening... Please speak clearly.")
-        audio = recognizer.listen(source)
-    try:
-        return recognizer.recognize_google(audio)
-    except:
-        return "Sorry, I couldn't hear you properly."
-
-# === Text-to-Speech ===
+# Text-to-Speech
 def speak(text):
     engine = pyttsx3.init()
     engine.setProperty('rate', 170)
     engine.say(text)
     engine.runAndWait()
 
-# === Get GPT Response ===
+# GPT reply
 def get_reply(user_input):
-    st.session_state.chat_history.append(("You", user_input))
+    st.session_state.chat_history.append(("user", user_input))
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are a kind and supportive mental health companion. "
-                    "Talk like a best friend using warm, friendly tone. "
-                    "Include a motivational quote, calming suggestion, and reminder for self-care."
-                ),
-            },
+            {"role": "system", "content": (
+                "You're a mental health companion who replies warmly like a close friend. "
+                "Add kindness, one motivational quote, and one calming activity suggestion in each response."
+            )},
             {"role": "user", "content": user_input}
         ],
-        temperature=0.7,
-        max_tokens=500
+        temperature=0.7
     )
     reply = response.choices[0].message.content.strip()
-    st.session_state.chat_history.append(("Solace AI", reply))
+    st.session_state.chat_history.append(("bot", reply))
     return reply
 
-# === Typing Effect ===
+# Typing effect
 def render_typing(reply):
     with st.empty():
         typed = ""
@@ -92,27 +108,23 @@ def render_typing(reply):
             st.markdown(typed + "▌")
         st.markdown(typed)
 
-# === Input UI ===
-st.markdown("### 💬 How are you feeling today?")
-col1, col2 = st.columns([5, 1])
-with col1:
-    user_input = st.text_area("Type your feelings here...", key="input", height=150)
-with col2:
-    if st.button("🎙️"):
-        user_input = voice_input()
-        st.session_state.input = user_input
-        st.experimental_rerun()
+# Input UI
+st.markdown("### 💬 Share how you're feeling:")
+user_input = st.text_area("Your message", height=100)
 
 if st.button("🧠 Get Support"):
-    if not user_input.strip():
-        st.warning("Please type or speak how you’re feeling.")
-    else:
+    if user_input.strip():
         reply = get_reply(user_input)
-        st.success("Here's something for you:")
+        st.success("Here's what Solace AI says:")
         render_typing(reply)
         st.button("🔈 Read Out Loud", on_click=lambda: speak(reply))
+    else:
+        st.warning("Please enter your feelings.")
 
-# Optional: Show chat history
-with st.expander("🗒️ Chat History"):
-    for role, msg in st.session_state.chat_history:
-        st.markdown(f"**{role}**: {msg}")
+# Chat history with avatars
+st.markdown("### 🗒️ Conversation")
+for role, msg in st.session_state.chat_history:
+    if role == "user":
+        st.markdown(f"<div class='user-bubble'>🧍‍♀️ {msg}</div>", unsafe_allow_html=True)
+    else:
+        st.markdown(f"<div class='bot-bubble'>🤖 {msg}</div>", unsafe_allow_html=True)
